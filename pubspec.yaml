@@ -1,0 +1,69 @@
+name: cosmos
+description: Long-Form AI Video Generator powered by NVIDIA Cosmos NIM
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  provider: ^6.1.1
+
+  # HTTP
+  dio: ^5.4.0
+  http: ^1.2.0
+
+  # Background foreground service
+  flutter_foreground_task: ^8.12.0
+
+  # FFmpeg video processing (full build: all codecs + H.264/H.265)
+  ffmpeg_kit_flutter_full_gpl: ^6.0.3
+
+  # Permissions
+  permission_handler: ^11.3.0
+
+  # Storage / file system
+  path_provider: ^2.1.2
+
+  # Persistent settings storage
+  shared_preferences: ^2.2.2
+
+  # Secure storage for API keys
+  flutter_secure_storage: ^9.2.2
+
+  # Typography
+  google_fonts: ^6.2.1
+
+  # YouTube data extraction
+  youtube_explode_dart: ^2.3.6
+
+  # Animations
+  lottie: ^3.1.2
+
+  # Shimmer loading placeholders
+  shimmer: ^3.0.0
+
+  # Image utilities
+  image: ^4.1.7
+
+  # UUID for job IDs
+  uuid: ^4.3.3
+
+  # Intl / date formatting
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
+    - assets/animations/
