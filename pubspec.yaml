@@ -22,7 +22,7 @@ dependencies:
   flutter_foreground_task: ^8.12.0
 
   # FFmpeg video processing (full build: all codecs + H.264/H.265)
-  ffmpeg_kit_flutter_full_gpl: ^6.0.3
+  ffmpeg_kit_flutter_new: ^4.6.2
 
   # Permissions
   permission_handler: ^11.3.0

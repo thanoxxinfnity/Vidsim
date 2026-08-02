@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace "com.cosmos.app"
-    compileSdk flutter.compileSdkVersion
+    compileSdk 35
     ndkVersion "27.0.12077973"  // Required by ffmpeg_kit_flutter
 
     compileOptions {
@@ -31,6 +31,7 @@ android {
         release {
             signingConfig signingConfigs.debug  // Change to release signing for production
             minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
