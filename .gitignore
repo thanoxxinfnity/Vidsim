@@ -46,3 +46,5 @@ output/
 *.env
 secrets.json
 jjk_clips/
+jjk_full_clips/
+jjk_work/
