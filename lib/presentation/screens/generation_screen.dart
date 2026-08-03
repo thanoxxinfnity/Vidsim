@@ -1,10 +1,8 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/generation_job.dart';
-import '../../data/models/scene.dart';
 import '../../presentation/providers/app_provider.dart';
 import '../../presentation/widgets/glassmorphic_card.dart';
 import '../../presentation/widgets/neon_button.dart';

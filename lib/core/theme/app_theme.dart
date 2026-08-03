@@ -9,13 +9,11 @@ class AppTheme {
   static ThemeData get dark {
     final base = ThemeData.dark();
     return base.copyWith(
-      useMaterial3: true,
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: const ColorScheme.dark(
         primary:    AppColors.cyan,
         secondary:  AppColors.purple,
         surface:    AppColors.surface,
-        background: AppColors.background,
         error:      AppColors.error,
         onPrimary:  Colors.black,
         onSurface:  AppColors.textPrimary,

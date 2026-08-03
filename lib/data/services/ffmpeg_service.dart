@@ -91,7 +91,7 @@ class FfmpegService {
       // Completion callback
     }, (log) {
       // Parse progress from FFmpeg logs
-      final logText = log.getMessage() ?? '';
+      final logText = log.getMessage();
       final match = RegExp(r'frame=\s*(\d+)').firstMatch(logText);
       if (match != null && onProgress != null) {
         final framesDone = int.parse(match.group(1)!);

@@ -1,9 +1,6 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
 import 'package:dio/dio.dart';
 import '../../core/constants/api_constants.dart';
-import '../../core/constants/app_colors.dart';
 
 /// Result from a single generation call
 class GenerationResult {
@@ -176,8 +173,7 @@ Return ONLY a numbered list, 1 to 20. No extra text.''';
       );
       final content = (r.data as Map)['choices'][0]['message']['content'] as String;
       return _parseSceneList(content);
-    } on DioException catch (e) {
-      // Fallback: simple sentence splitting
+    } on DioException catch (_) {
       return _simpleSplit(rawPrompt);
     }
   }

@@ -26,7 +26,7 @@ VIDEO_PROMPTS = [
 # ─── GENERATION SETTINGS ─────────────────────────────────────────────────────
 VIDEO_WIDTH      = 1280
 VIDEO_HEIGHT     = 720
-NUM_FRAMES       = 49       # ~5 seconds at ~10fps (HF spaces vary)
+NUM_FRAMES       = 360      # 15 seconds at 24fps (NIM) | HF caps at 49 automatically
 GUIDANCE_SCALE   = 6.0
 INFERENCE_STEPS  = 50
 MAX_RETRIES      = 3        # per clip before switching to HF
@@ -168,13 +168,15 @@ def hf_generate(prompt: str, space: str, ref_image_path: str = None) -> str | No
         enhanced = prompt + QUALITY_BOOST
 
         # Build kwargs based on space
+        # HF spaces have max frame limits — CogVideoX caps at 49 (~6s), HunyuanVideo at ~8s
+        HF_MAX_FRAMES = min(NUM_FRAMES, 49)  # CogVideoX hard limit
         kwargs = {}
         if "CogVideoX" in space:
             kwargs = {
                 "prompt":               enhanced,
                 "num_inference_steps":  INFERENCE_STEPS,
                 "guidance_scale":       GUIDANCE_SCALE,
-                "num_frames":           NUM_FRAMES,
+                "num_frames":           HF_MAX_FRAMES,
             }
             if ref_image_path:
                 kwargs["image"]         = handle_file(ref_image_path)
@@ -184,7 +186,7 @@ def hf_generate(prompt: str, space: str, ref_image_path: str = None) -> str | No
             kwargs = {
                 "prompt":       enhanced,
                 "resolution":   "720p",
-                "video_length": "5s",
+                "video_length": "8s",   # max supported by HunyuanVideo space
             }
 
         elif "stable-video" in space.lower():

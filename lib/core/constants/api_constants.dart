@@ -25,7 +25,7 @@ abstract class ApiConstants {
   static const defaultWidth       = 1280;
   static const defaultHeight      = 720;
   static const defaultFps         = 24;
-  static const defaultNumFrames   = 121; // ~5 seconds at 24fps
+  static const defaultNumFrames   = 360; // 15 seconds at 24fps
   static const defaultGuidance    = 7.5;
   static const defaultSteps       = 35;
 

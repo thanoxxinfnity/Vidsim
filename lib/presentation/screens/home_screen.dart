@@ -1,11 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../data/models/generation_job.dart';
 import '../../presentation/providers/app_provider.dart';
-import '../../presentation/providers/settings_provider.dart';
 import '../../presentation/widgets/prompt_tab.dart';
 import '../../presentation/widgets/youtube_tab.dart';
 import '../../presentation/widgets/settings_tab.dart';
@@ -20,7 +18,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _tabIndicatorCtrl;
-  late Animation<double> _tabIndicatorAnim;
 
   @override
   void initState() {
@@ -28,10 +25,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _tabIndicatorCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
-    );
-    _tabIndicatorAnim = CurvedAnimation(
-      parent: _tabIndicatorCtrl,
-      curve: Curves.easeInOut,
     );
     _tabIndicatorCtrl.forward();
   }
