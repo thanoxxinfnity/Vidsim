@@ -20,6 +20,7 @@ class AppProvider extends ChangeNotifier {
   String? _statusMessage;
   String? _ytVideoTitle;
   String? _ytThumbnail;
+  String? _referenceImagePath; // user-selected image for I2V first clip
 
   final _uuid = const Uuid();
   PipelineService? _pipeline;
@@ -31,12 +32,25 @@ class AppProvider extends ChangeNotifier {
   bool            get isLoadingScenes   => _isLoadingScenes;
   bool            get isGenerating      => _isGenerating;
   String?         get statusMessage     => _statusMessage;
-  String?         get ytVideoTitle      => _ytVideoTitle;
-  String?         get ytThumbnail       => _ytThumbnail;
-  bool            get hasScenes         => _scenePrompts.isNotEmpty;
+  String?         get ytVideoTitle         => _ytVideoTitle;
+  String?         get ytThumbnail          => _ytThumbnail;
+  String?         get referenceImagePath   => _referenceImagePath;
+  bool            get hasReferenceImage    => _referenceImagePath != null;
+  bool            get hasScenes            => _scenePrompts.isNotEmpty;
 
   void setTab(InputTab t) {
     _activeTab = t;
+    notifyListeners();
+  }
+
+  // ── Reference image (I2V first frame) ──────────────────────────────────────
+  void setReferenceImage(String? path) {
+    _referenceImagePath = path;
+    notifyListeners();
+  }
+
+  void clearReferenceImage() {
+    _referenceImagePath = null;
     notifyListeners();
   }
 
@@ -117,7 +131,12 @@ class AppProvider extends ChangeNotifier {
       return Scene(id: _uuid.v4(), index: e.key, prompt: e.value);
     }).toList();
 
-    _currentJob  = GenerationJob(id: _uuid.v4(), title: title, scenes: scenes);
+    _currentJob  = GenerationJob(
+      id:                 _uuid.v4(),
+      title:              title,
+      scenes:             scenes,
+      referenceImagePath: _referenceImagePath,
+    );
     _isGenerating = true;
     _statusMessage = 'Starting generation...';
     notifyListeners();

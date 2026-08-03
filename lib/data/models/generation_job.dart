@@ -7,6 +7,7 @@ class GenerationJob {
   final String id;
   final String title;
   final List<Scene> scenes;
+  final String? referenceImagePath;
   JobStatus status;
   int currentSceneIndex;
   String? finalVideoPath;
@@ -18,6 +19,7 @@ class GenerationJob {
     required this.id,
     required this.title,
     required this.scenes,
+    this.referenceImagePath,
     this.status = JobStatus.idle,
     this.currentSceneIndex = 0,
     this.finalVideoPath,
@@ -50,27 +52,29 @@ class GenerationJob {
     DateTime? completedAt,
   }) =>
       GenerationJob(
-        id:                 id,
-        title:              title,
-        scenes:             scenes,
-        status:             status ?? this.status,
-        currentSceneIndex:  currentSceneIndex ?? this.currentSceneIndex,
-        finalVideoPath:     finalVideoPath ?? this.finalVideoPath,
-        errorMessage:       errorMessage ?? this.errorMessage,
-        startedAt:          startedAt,
-        completedAt:        completedAt ?? this.completedAt,
+        id:                   id,
+        title:                title,
+        scenes:               scenes,
+        referenceImagePath:   referenceImagePath,
+        status:               status ?? this.status,
+        currentSceneIndex:    currentSceneIndex ?? this.currentSceneIndex,
+        finalVideoPath:       finalVideoPath ?? this.finalVideoPath,
+        errorMessage:         errorMessage ?? this.errorMessage,
+        startedAt:            startedAt,
+        completedAt:          completedAt ?? this.completedAt,
       );
 
   Map<String, dynamic> toMap() => {
-        'id':                 id,
-        'title':              title,
-        'scenes':             scenes.map((s) => s.toMap()).toList(),
-        'status':             status.name,
-        'currentSceneIndex':  currentSceneIndex,
-        'finalVideoPath':     finalVideoPath,
-        'errorMessage':       errorMessage,
-        'startedAt':          startedAt.toIso8601String(),
-        'completedAt':        completedAt?.toIso8601String(),
+        'id':                   id,
+        'title':                title,
+        'scenes':               scenes.map((s) => s.toMap()).toList(),
+        'referenceImagePath':   referenceImagePath,
+        'status':               status.name,
+        'currentSceneIndex':    currentSceneIndex,
+        'finalVideoPath':       finalVideoPath,
+        'errorMessage':         errorMessage,
+        'startedAt':            startedAt.toIso8601String(),
+        'completedAt':          completedAt?.toIso8601String(),
       };
 
   String toJson() => jsonEncode(toMap());

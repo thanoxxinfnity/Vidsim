@@ -42,6 +42,16 @@ class PipelineService {
     String? prevLastFramePath;
     final completedPaths = <String>[];
 
+    // Load reference image as the starting frame for I2V (first clip)
+    if (job.referenceImagePath != null) {
+      try {
+        final imgFile = File(job.referenceImagePath!);
+        if (await imgFile.exists()) {
+          prevLastFrameB64 = base64Encode(await imgFile.readAsBytes());
+        }
+      } catch (_) {}
+    }
+
     for (int i = 0; i < job.scenes.length; i++) {
       if (_cancelled) break;
 
@@ -161,7 +171,7 @@ class PipelineService {
     if (config.hasNimKey) {
       GenerationResult nimResult;
       for (int attempt = 1; attempt <= 3; attempt++) {
-        if (isFirst || prevFrameB64 == null || !config.useImageToVideo) {
+        if (prevFrameB64 == null || !config.useImageToVideo) {
           nimResult = await _nim.textToVideo(
             prompt:         scene.prompt,
             width:          config.videoWidth,
@@ -212,7 +222,7 @@ class PipelineService {
     }
 
     // ── 2. HuggingFace Fallback ───────────────────────────────────────────────
-    if (config.useImageToVideo && prevFrameB64 != null && !isFirst) {
+    if (config.useImageToVideo && prevFrameB64 != null) {
       final hfResult = await _hf.imageToVideo(
         prompt:      scene.prompt + ApiConstants.qualityBooster,
         imageBase64: prevFrameB64,

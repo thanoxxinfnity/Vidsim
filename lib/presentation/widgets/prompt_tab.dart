@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../presentation/providers/app_provider.dart';
@@ -20,6 +22,7 @@ class _PromptTabState extends State<PromptTab> {
   final _titleCtrl     = TextEditingController(text: 'My Cosmos Video');
   final _sceneCtrl     = TextEditingController();
   bool _showSceneInput = false;
+  final _picker        = ImagePicker();
 
   @override
   void dispose() {
@@ -27,6 +30,18 @@ class _PromptTabState extends State<PromptTab> {
     _titleCtrl.dispose();
     _sceneCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final xfile = await _picker.pickImage(
+      source:       ImageSource.gallery,
+      imageQuality: 90,
+      maxWidth:     1280,
+      maxHeight:    720,
+    );
+    if (xfile != null && mounted) {
+      context.read<AppProvider>().setReferenceImage(xfile.path);
+    }
   }
 
   @override
@@ -135,6 +150,14 @@ class _PromptTabState extends State<PromptTab> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Reference image (I2V first frame) ────────────────────────────
+          _ReferenceImageCard(
+            imagePath: app.referenceImagePath,
+            onPick:    _pickImage,
+            onClear:   () => context.read<AppProvider>().clearReferenceImage(),
           ),
           const SizedBox(height: 16),
 
@@ -345,6 +368,116 @@ class _StatusBanner extends StatelessWidget {
         border: Border.all(color: AppColors.info.withOpacity(0.3)),
       ),
       child: Text(message, style: const TextStyle(color: AppColors.info, fontSize: 13)),
+    );
+  }
+}
+
+class _ReferenceImageCard extends StatelessWidget {
+  final String? imagePath;
+  final VoidCallback onPick;
+  final VoidCallback onClear;
+
+  const _ReferenceImageCard({
+    required this.imagePath,
+    required this.onPick,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassmorphicCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.image_rounded, color: AppColors.purple, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Reference Image (First Frame)',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              const Spacer(),
+              if (imagePath != null)
+                GestureDetector(
+                  onTap: onClear,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.close_rounded, color: AppColors.error, size: 16),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Optional — your image will be used as the starting frame for video generation',
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+          ),
+          const SizedBox(height: 12),
+          if (imagePath != null) ...[
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.file(
+                    File(imagePath!),
+                    width: 90,
+                    height: 60,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        imagePath!.split('/').last,
+                        style: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 14),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'Image selected',
+                            style: TextStyle(color: AppColors.success, fontSize: 11),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                PillButton(label: 'Change', onPressed: onPick),
+              ],
+            ),
+          ] else ...[
+            OutlinedButton.icon(
+              onPressed: onPick,
+              icon: const Icon(Icons.photo_library_rounded, size: 18),
+              label: const Text('Pick from Gallery'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.purple,
+                side: const BorderSide(color: AppColors.purple, width: 1.2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

@@ -51,6 +51,9 @@ dependencies:
   # Image utilities
   image: ^4.1.7
 
+  # Image picker (gallery / camera) for reference image selection
+  image_picker: ^1.1.2
+
   # UUID for job IDs
   uuid: ^4.3.3
 
