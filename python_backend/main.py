@@ -14,13 +14,26 @@ HF_SPACES = [
 ]
 
 # ─── VIDEO PROMPTS ────────────────────────────────────────────────────────────
-# Edit this list with your scene descriptions
+# GOJO vs SUKUNA — Jujutsu Kaisen (9-scene epic fight sequence)
 VIDEO_PROMPTS = [
-    "A cinematic aerial shot of a futuristic megacity at night, glowing neon lights reflecting on wet streets",
-    "Close-up of a robot hand picking up a glowing orb, ultra realistic textures, 8k detail",
-    "A spaceship launching from a volcanic planet, massive explosion, dramatic orange sky",
-    "Deep underwater scene, bioluminescent creatures swimming around ancient ruins",
-    "Time-lapse of a forest growing from a seed to a giant tree, magical golden light",
+    # Scene 1: Sukuna's Inner Domain & Binding Vow
+    "Cinematic anime animation, Ryomen Sukuna sitting atop a giant throne made of animal skulls inside his dark red inner domain, glowing menacing red eyes, dark facial markings, dark red cursed aura floating, sinister lighting, Jujutsu Kaisen anime style, hyper-detailed 8k resolution, dramatic camera angle.",
+    # Scene 2: High-Speed Taijutsu & Unmasking Six Eyes
+    "Fast-paced anime fight scene, Satoru Gojo pulling down black blindfold to reveal bright glowing cyan Six Eyes, martial arts clash with Ryomen Sukuna, supersonic impact shockwaves, dust particles flying, intense motion blur, dramatic camera dynamic movement, highly detailed.",
+    # Scene 3: Domain Expansion Clash
+    "Dynamic anime action shot, Satoru Gojo performing Unlimited Void hand sign alongside Sukuna making Malevolent Shrine hand sign, dark red energy slashing waves colliding with cosmic purple infinity space, domain expansion clash, cinematic electric lightning effects, 4k anime masterpiece.",
+    # Scene 4: Reversal Red & Black Flash Impact
+    "Extreme close-up anime shot, Satoru Gojo firing Cursed Technique Reversal Red, a glowing bright crimson energy orb floating on his index finger, followed by a heavy fist punch surrounded by red and black electric lightning spatial distortion, dramatic lighting, highly detailed combat animation.",
+    # Scene 5: Maximum Output Blue & Hollow Purple Collision
+    "Epic anime animation, Satoru Gojo chanting with floating dark energy particles, blue and red spherical energies colliding in mid-air to create a massive glowing purple void sphere, space-distorting energy waves, dramatic night sky background, cinematic lighting.",
+    # Scene 6: "Nah, I'd Win" Confident Flashback
+    "Anime character portrait, Satoru Gojo with spiky white hair, bright glowing blue Six Eyes visible through black blindfold glasses, arrogant confident smirk, clean crisp anime illustration, soft backlight, highly detailed character design, Jujutsu Kaisen style.",
+    # Scene 7: Mahoraga's Wheel Adaptation Phase
+    "Dark anime scene, Eight-handled adaptation wheel floating behind Sukuna spinning with dark cursed aura, golden metallic wheel texture, ominous shadowy presence, subtle smoke particles, dramatic atmospheric lighting, adaptation process effect, Jujutsu Kaisen style.",
+    # Scene 8: World Bisecting Slash (World Cutting Slash)
+    "Wide cinematic anime shot, Ryomen Sukuna executing World Cutting Slash, massive invisible spatial distortion cutting through the entire environment and space, reality splitting effect, black and red slash trails, epic destructive shockwave, Jujutsu Kaisen style.",
+    # Scene 9: Sukuna's Respectful Aftermath
+    "Cinematic anime aftermath scene, Ryomen Sukuna standing victorious amidst smoke, ashes, and battlefield debris, evil yet respectful expression, dark sunset sky, floating embers, intense atmosphere, masterpiece quality animation, Jujutsu Kaisen style.",
 ]
 
 # ─── GENERATION SETTINGS ─────────────────────────────────────────────────────

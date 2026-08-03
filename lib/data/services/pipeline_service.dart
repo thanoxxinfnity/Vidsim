@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../core/constants/api_constants.dart';
 import '../../data/models/scene.dart';
@@ -24,6 +25,8 @@ class PipelineService {
   final FfmpegService _ffmpeg = FfmpegService();
   bool _cancelled = false;
 
+  static const _mediaChannel = MethodChannel('cosmos/media_scanner');
+
   PipelineService({required this.onUpdate});
 
   Future<void> runJob(GenerationJob job, ApiConfig config) async {
@@ -31,7 +34,9 @@ class PipelineService {
     _nim = NvidiaNimService(apiKey: config.nimApiKey, endpoint: config.cosmosEndpoint);
     _hf  = HuggingFaceService(token: config.hfToken.isNotEmpty ? config.hfToken : null);
 
-    _update(job.copyWith(status: JobStatus.generating));
+    // FIX: assign back so all subsequent onUpdate calls carry status: generating
+    job = job.copyWith(status: JobStatus.generating);
+    _update(job);
 
     String? prevLastFrameB64;
     String? prevLastFramePath;
@@ -40,17 +45,35 @@ class PipelineService {
     for (int i = 0; i < job.scenes.length; i++) {
       if (_cancelled) break;
 
-      final scene = job.scenes[i];
       _updateScene(job, i, SceneStatus.generating);
 
-      String? clipPath = await _generateClip(
-        scene:           scene,
-        index:           i,
-        config:          config,
-        prevFrameB64:    prevLastFrameB64,
-        prevFramePath:   prevLastFramePath,
-        isFirst:         i == 0,
-      );
+      // Retry indefinitely until success or cancelled ("jab tak na bana tab tak")
+      String? clipPath;
+      int attempt = 0;
+      while (!_cancelled && clipPath == null) {
+        attempt++;
+
+        if (attempt > 1) {
+          final waitSec = (10 * (attempt - 1)).clamp(10, 60);
+          job.scenes[i] = job.scenes[i].copyWith(
+            errorMessage: 'Retry $attempt — waiting ${waitSec}s...',
+            retryCount:   attempt - 1,
+          );
+          onUpdate(job);
+          await Future.delayed(Duration(seconds: waitSec));
+          if (_cancelled) break;
+          _updateScene(job, i, SceneStatus.generating);
+        }
+
+        clipPath = await _generateClip(
+          scene:         job.scenes[i],
+          index:         i,
+          config:        config,
+          prevFrameB64:  prevLastFrameB64,
+          prevFramePath: prevLastFramePath,
+          isFirst:       i == 0,
+        );
+      }
 
       if (clipPath != null) {
         completedPaths.add(clipPath);
@@ -64,7 +87,7 @@ class PipelineService {
           job.scenes[i] = job.scenes[i].copyWith(lastFramePath: lastFrame.path);
         }
       } else {
-        _updateScene(job, i, SceneStatus.failed, error: 'Both NIM and HF failed for this clip');
+        _updateScene(job, i, SceneStatus.failed, error: 'Cancelled during retry');
       }
 
       job = job.copyWith(currentSceneIndex: i + 1);
@@ -101,6 +124,8 @@ class PipelineService {
 
       if (finalPath != null) {
         await _ffmpeg.cleanupTempClips(completedPaths);
+        // Trigger Android MediaStore scan so video appears in gallery / Downloads
+        await _scanToGallery(finalPath);
         onUpdate(job.copyWith(
           status:         JobStatus.completed,
           finalVideoPath: finalPath,
@@ -115,6 +140,13 @@ class PipelineService {
   }
 
   void cancel() => _cancelled = true;
+
+  // ── Trigger Android MediaStore scan ─────────────────────────────────────────
+  Future<void> _scanToGallery(String path) async {
+    try {
+      await _mediaChannel.invokeMethod('scan', {'path': path});
+    } catch (_) {}
+  }
 
   // ── Try NIM first, auto-switch to HF on any failure ───────────────────────
   Future<String?> _generateClip({
@@ -151,7 +183,6 @@ class PipelineService {
         }
 
         if (nimResult.success) {
-          // Handle async job polling
           if (nimResult.jobId != null && nimResult.pollUrl != null) {
             final polled = await _nim.pollJob(
               jobId:   nimResult.jobId!,
@@ -181,9 +212,8 @@ class PipelineService {
     }
 
     // ── 2. HuggingFace Fallback ───────────────────────────────────────────────
-    HfResult hfResult;
     if (config.useImageToVideo && prevFrameB64 != null && !isFirst) {
-      hfResult = await _hf.imageToVideo(
+      final hfResult = await _hf.imageToVideo(
         prompt:      scene.prompt + ApiConstants.qualityBooster,
         imageBase64: prevFrameB64,
         numFrames:   HuggingFaceService.maxHfFrames,
@@ -191,8 +221,8 @@ class PipelineService {
       if (hfResult.success) return hfResult.videoPath;
     }
 
-    // T2V as final option
-    hfResult = await _hf.textToVideo(
+    // T2V as final option (single attempt — outer retry loop handles retries)
+    final hfResult = await _hf.textToVideo(
       prompt:    scene.prompt + ApiConstants.qualityBooster,
       numFrames: HuggingFaceService.maxHfFrames,
       guidance:  config.guidanceScale,
@@ -234,9 +264,9 @@ class PipelineService {
     String? error,
   }) {
     job.scenes[index] = job.scenes[index].copyWith(
-      status:         status,
+      status:          status,
       outputVideoPath: videoPath,
-      errorMessage:   error,
+      errorMessage:    error,
     );
     onUpdate(job);
   }

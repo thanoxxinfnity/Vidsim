@@ -105,9 +105,34 @@ class _PromptTabState extends State<PromptTab> {
                   ],
                 ),
                 if (!settings.config.hasNimKey) ...[
-                  const SizedBox(height: 10),
-                  _WarningBanner(text: 'Add your NVIDIA NIM API key in Settings tab first'),
+                  const SizedBox(height: 8),
+                  _WarningBanner(text: 'Add NIM key for AI scene breakdown — or add scenes manually below'),
                 ],
+                // Estimated duration hint
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.cyan.withOpacity(0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.cyan.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.timer_outlined, color: AppColors.cyan, size: 14),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          app.hasScenes
+                              ? 'Estimated video: ~${app.scenePrompts.length * 2}s '
+                                '(${app.scenePrompts.length} clips × ~2s via HuggingFace)'
+                              : 'Each clip ≈ 2s via HuggingFace • Add scenes to see total estimate',
+                          style: const TextStyle(color: AppColors.cyan, fontSize: 11.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -165,7 +190,7 @@ class _PromptTabState extends State<PromptTab> {
                     isLoading: app.isGenerating,
                     height:    60,
                     colors:    const [AppColors.purpleDark, AppColors.purple],
-                    onPressed: app.isGenerating || !settings.config.hasNimKey
+                    onPressed: app.isGenerating
                         ? null
                         : () => context.read<AppProvider>().startGeneration(
                               _titleCtrl.text, settings.config),

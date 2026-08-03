@@ -13,20 +13,16 @@ class HfResult {
 }
 
 /// Calls the HuggingFace Inference API for free video generation.
-/// Free HF token (huggingface.co/settings/tokens) gives better rate limits.
 class HuggingFaceService {
   static const _base = 'https://api-inference.huggingface.co/models';
 
-  // T2V models tried in order (best → fallback)
   static const _t2vModels = [
     'THUDM/CogVideoX-5b',
     'THUDM/CogVideoX1.5-5B',
   ];
 
-  // I2V model (last-frame anchor)
   static const _i2vModel = 'ali-vilab/i2vgen-xl';
 
-  // Max frames HF models support (CogVideoX hard limit)
   static const maxHfFrames = 49;
 
   final String? token;
@@ -36,7 +32,9 @@ class HuggingFaceService {
     _dio = Dio(BaseOptions(
       connectTimeout: const Duration(seconds: 60),
       receiveTimeout: const Duration(minutes: 20),
-      responseType: ResponseType.bytes,
+      responseType:   ResponseType.bytes,
+      // Never throw based on status — we handle all codes manually
+      validateStatus: (_) => true,
     ));
     if (token != null && token!.trim().isNotEmpty) {
       _dio.options.headers['Authorization'] = 'Bearer ${token!.trim()}';
@@ -60,8 +58,8 @@ class HuggingFaceService {
           'inputs': prompt,
           'parameters': {
             'num_inference_steps': steps,
-            'guidance_scale': guidance,
-            'num_frames': frames,
+            'guidance_scale':      guidance,
+            'num_frames':          frames,
           },
         },
         clipIndex: _t2vModels.indexOf(model),
@@ -80,7 +78,7 @@ class HuggingFaceService {
       model: _i2vModel,
       body: {
         'inputs': {
-          'image': 'data:image/jpeg;base64,$imageBase64',
+          'image':  'data:image/jpeg;base64,$imageBase64',
           'prompt': prompt,
         },
         'parameters': {'num_frames': numFrames.clamp(1, maxHfFrames)},
@@ -93,51 +91,92 @@ class HuggingFaceService {
     required Map<String, dynamic> body,
     int clipIndex = 0,
   }) async {
-    for (int attempt = 1; attempt <= 3; attempt++) {
+    // 5 attempts — outer pipeline retry loop handles further retries
+    for (int attempt = 1; attempt <= 5; attempt++) {
       try {
-        final r = await _dio.post(
-          '$_base/$model',
-          data: json.encode(body),
-        );
+        final r = await _dio.post('$_base/$model', data: json.encode(body));
+        final status = r.statusCode ?? 0;
 
-        if (r.statusCode == 503) {
-          // Model loading — wait and retry
-          final waitSec = 20 * attempt;
+        // Model loading (503) — wait and retry
+        if (status == 503) {
+          final waitSec = (30 * attempt).clamp(30, 120);
           await Future.delayed(Duration(seconds: waitSec));
           continue;
         }
 
-        if (r.statusCode == 429) {
-          await Future.delayed(Duration(seconds: 30 * attempt));
+        // Rate limit (429) — back off
+        if (status == 429) {
+          await Future.delayed(Duration(seconds: 60 * attempt));
           continue;
         }
 
-        if (r.statusCode == 200) {
+        if (status == 401) return HfResult.err('HF token invalid – check Settings');
+        if (status == 403) return HfResult.err('HF model access denied for $model');
+
+        if (status == 200) {
           final bytes = r.data as List<int>;
           if (bytes.isEmpty) return HfResult.err('Empty response from $model');
+
+          // HF sometimes returns 200 with a JSON error body instead of binary video
+          if (bytes.length < 2000) {
+            final maybeJson = _tryParseJson(bytes);
+            if (maybeJson != null) {
+              final errMsg = maybeJson['error']?.toString();
+              final estimatedSec = (maybeJson['estimated_time'] as num?)?.toInt();
+              if (errMsg != null) {
+                if (estimatedSec != null && attempt < 5) {
+                  await Future.delayed(Duration(seconds: estimatedSec.clamp(10, 120)));
+                  continue;
+                }
+                return HfResult.err('HF: $errMsg');
+              }
+            }
+          }
+
           final path = await _saveBytes(bytes, clipIndex);
           return HfResult(success: true, videoPath: path);
         }
 
-        return HfResult.err('HF HTTP ${r.statusCode} from $model');
+        return HfResult.err('HF HTTP $status from $model');
       } on DioException catch (e) {
-        if (e.response?.statusCode == 401) {
-          return HfResult.err('HF token invalid – check Settings');
+        final status = e.response?.statusCode ?? 0;
+
+        if (status == 503) {
+          final waitSec = (30 * attempt).clamp(30, 120);
+          await Future.delayed(Duration(seconds: waitSec));
+          continue;
         }
-        if (e.response?.statusCode == 403) {
-          return HfResult.err('HF model access denied for $model');
+        if (status == 429) {
+          await Future.delayed(Duration(seconds: 60 * attempt));
+          continue;
         }
-        if (attempt == 3) {
-          return HfResult.err(e.message ?? 'HF network error');
+        if (status == 401) return HfResult.err('HF token invalid');
+        if (status == 403) return HfResult.err('HF model access denied');
+
+        if (attempt < 5) {
+          await Future.delayed(Duration(seconds: 15 * attempt));
         }
-        await Future.delayed(Duration(seconds: 5 * attempt));
+      } catch (e) {
+        if (attempt < 5) {
+          await Future.delayed(Duration(seconds: 10 * attempt));
+        }
       }
     }
     return HfResult.err('HF: max retries exceeded for $model');
   }
 
+  Map<String, dynamic>? _tryParseJson(List<int> bytes) {
+    try {
+      final str = utf8.decode(bytes);
+      if (str.trim().startsWith('{')) {
+        return jsonDecode(str) as Map<String, dynamic>;
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<String> _saveBytes(List<int> bytes, int index) async {
-    final dir = await getTemporaryDirectory();
+    final dir  = await getTemporaryDirectory();
     final path = '${dir.path}/hf_clip_${index}_${DateTime.now().millisecondsSinceEpoch}.mp4';
     await File(path).writeAsBytes(bytes);
     return path;
