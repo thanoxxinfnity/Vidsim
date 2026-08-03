@@ -45,3 +45,4 @@ output/
 # Secrets — never commit these!
 *.env
 secrets.json
+jjk_clips/
