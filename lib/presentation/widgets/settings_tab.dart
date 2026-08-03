@@ -15,9 +15,11 @@ class SettingsTab extends StatefulWidget {
 
 class _SettingsTabState extends State<SettingsTab> {
   final _nimCtrl      = TextEditingController();
+  final _hfCtrl       = TextEditingController();
   final _ytCtrl       = TextEditingController();
   final _endpointCtrl = TextEditingController();
   bool _nimVisible    = false;
+  bool _hfVisible     = false;
   bool _ytVisible     = false;
   bool _saved         = false;
   bool _initialized   = false;
@@ -28,6 +30,7 @@ class _SettingsTabState extends State<SettingsTab> {
     if (!_initialized) {
       final cfg = context.read<SettingsProvider>().config;
       _nimCtrl.text      = cfg.nimApiKey;
+      _hfCtrl.text       = cfg.hfToken;
       _ytCtrl.text       = cfg.youtubeApiKey;
       _endpointCtrl.text = cfg.cosmosEndpoint;
       _initialized       = true;
@@ -37,6 +40,7 @@ class _SettingsTabState extends State<SettingsTab> {
   @override
   void dispose() {
     _nimCtrl.dispose();
+    _hfCtrl.dispose();
     _ytCtrl.dispose();
     _endpointCtrl.dispose();
     super.dispose();
@@ -45,6 +49,7 @@ class _SettingsTabState extends State<SettingsTab> {
   Future<void> _save() async {
     final sp = context.read<SettingsProvider>();
     await sp.saveNimKey(_nimCtrl.text);
+    await sp.saveHfToken(_hfCtrl.text);
     await sp.saveYtKey(_ytCtrl.text);
     await sp.saveEndpoint(_endpointCtrl.text);
     setState(() { _saved = true; });
@@ -115,6 +120,39 @@ class _SettingsTabState extends State<SettingsTab> {
                   text: 'Cosmos video generation requires enterprise NIM access. '
                       'Sign up at build.nvidia.com for access.',
                   color: AppColors.warning,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // ── HuggingFace ──────────────────────────────────────────────────────
+          _SectionHeader(
+            icon:  Icons.hub_rounded,
+            label: 'HuggingFace (Free Fallback)',
+            color: AppColors.purple,
+          ),
+          const SizedBox(height: 10),
+          GlassmorphicCard(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _ApiKeyField(
+                  controller: _hfCtrl,
+                  label:      'HF Token (optional)',
+                  hint:       'hf_...',
+                  visible:    _hfVisible,
+                  icon:       Icons.token_rounded,
+                  color:      AppColors.purple,
+                  onToggle:   () => setState(() => _hfVisible = !_hfVisible),
+                ),
+                const SizedBox(height: 12),
+                _InfoBox(
+                  text: 'Auto-fallback when NIM unavailable. '
+                      'Free token from huggingface.co/settings/tokens gives '
+                      'better rate limits. Works without token too (slower queue).',
+                  color: AppColors.purple,
                 ),
               ],
             ),
@@ -202,11 +240,11 @@ class _SettingsTabState extends State<SettingsTab> {
                 const Divider(color: AppColors.glassBorder, height: 28),
 
                 // Frames per clip
-                Text('Frames Per Clip: ${sp.config.numFrames} (~${(sp.config.numFrames / 24).toStringAsFixed(1)}s)', style: _labelStyle),
+                Text('Frames Per Clip: ${sp.config.numFrames} (~${(sp.config.numFrames / 24).toStringAsFixed(1)}s | NIM: up to 360 • HF: max 49)', style: _labelStyle),
                 Slider(
-                  value:    sp.config.numFrames.toDouble(),
-                  min:      48, max: 240, divisions: 8,
-                  label:    '${sp.config.numFrames} frames',
+                  value:    sp.config.numFrames.toDouble().clamp(48, 360),
+                  min:      48, max: 360, divisions: 16,
+                  label:    '${sp.config.numFrames} frames (~${(sp.config.numFrames / 24).toStringAsFixed(0)}s)',
                   activeColor: AppColors.cyan,
                   inactiveColor: AppColors.glassBorder,
                   onChanged: (v) => sp.saveNumFrames(v.round()),

@@ -21,11 +21,17 @@ abstract class ApiConstants {
   static const ytCaptions  = '$ytApiBase/captions';
   static const ytSearch    = '$ytApiBase/search';
 
+  // ── HuggingFace Inference API ────────────────────────────────────────────────
+  static const hfInferenceBase    = 'https://api-inference.huggingface.co/models';
+  static const hfT2VModel         = 'THUDM/CogVideoX-5b';
+  static const hfI2VModel         = 'ali-vilab/i2vgen-xl';
+  static const hfMaxFrames        = 49; // CogVideoX hard cap (~6s)
+
   // ── Generation defaults ─────────────────────────────────────────────────────
   static const defaultWidth       = 1280;
   static const defaultHeight      = 720;
   static const defaultFps         = 24;
-  static const defaultNumFrames   = 360; // 15 seconds at 24fps
+  static const defaultNumFrames   = 360; // 15 seconds at 24fps (NIM); HF capped at 49
   static const defaultGuidance    = 7.5;
   static const defaultSteps       = 35;
 

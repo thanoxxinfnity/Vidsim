@@ -14,6 +14,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get isLoaded    => _loaded;
 
   static const _kNimKey       = 'nim_api_key';
+  static const _kHfToken      = 'hf_token';
   static const _kYtKey        = 'yt_api_key';
   static const _kEndpoint     = 'cosmos_endpoint';
   static const _kWidth        = 'vid_width';
@@ -25,25 +26,27 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> load() async {
     final nim      = await _storage.read(key: _kNimKey)    ?? '';
+    final hf       = await _storage.read(key: _kHfToken)   ?? '';
     final yt       = await _storage.read(key: _kYtKey)     ?? '';
     final endpoint = await _storage.read(key: _kEndpoint)  ??
         'https://integrate.api.nvidia.com/v1/video/nvidia/cosmos-1.0-diffusion';
     final width    = int.tryParse(await _storage.read(key: _kWidth)  ?? '1280') ?? 1280;
     final height   = int.tryParse(await _storage.read(key: _kHeight) ?? '720')  ?? 720;
-    final frames   = int.tryParse(await _storage.read(key: _kFrames) ?? '121')  ?? 121;
+    final frames   = int.tryParse(await _storage.read(key: _kFrames) ?? '360')  ?? 360;
     final guidance = double.tryParse(await _storage.read(key: _kGuidance) ?? '7.5') ?? 7.5;
     final steps    = int.tryParse(await _storage.read(key: _kSteps)  ?? '35')  ?? 35;
     final i2v      = (await _storage.read(key: _kI2V)) != 'false';
 
     _config = ApiConfig(
-      nimApiKey:      nim,
-      youtubeApiKey:  yt,
-      cosmosEndpoint: endpoint,
-      videoWidth:     width,
-      videoHeight:    height,
-      numFrames:      frames,
-      guidanceScale:  guidance,
-      inferenceSteps: steps,
+      nimApiKey:       nim,
+      hfToken:         hf,
+      youtubeApiKey:   yt,
+      cosmosEndpoint:  endpoint,
+      videoWidth:      width,
+      videoHeight:     height,
+      numFrames:       frames,
+      guidanceScale:   guidance,
+      inferenceSteps:  steps,
       useImageToVideo: i2v,
     );
     _loaded = true;
@@ -53,6 +56,12 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> saveNimKey(String key) async {
     await _storage.write(key: _kNimKey, value: key.trim());
     _config = _config.copyWith(nimApiKey: key.trim());
+    notifyListeners();
+  }
+
+  Future<void> saveHfToken(String token) async {
+    await _storage.write(key: _kHfToken, value: token.trim());
+    _config = _config.copyWith(hfToken: token.trim());
     notifyListeners();
   }
 
