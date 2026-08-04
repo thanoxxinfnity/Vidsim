@@ -161,6 +161,14 @@ class _PromptTabState extends State<PromptTab> {
           ),
           const SizedBox(height: 16),
 
+          // ── Target duration selector ──────────────────────────────────────
+          _DurationSelector(
+            selectedMinutes: app.targetDurationMinutes,
+            estimatedClips:  app.estimatedClipsForTarget,
+            onChanged: (m) => context.read<AppProvider>().setTargetDuration(m),
+          ),
+          const SizedBox(height: 16),
+
           // ── Scene list ────────────────────────────────────────────────────
           if (app.hasScenes) ...[
             _SceneListHeader(
@@ -208,7 +216,7 @@ class _PromptTabState extends State<PromptTab> {
                   ),
                   const SizedBox(height: 16),
                   NeonButton(
-                    label:     'Start Generation (${app.scenePrompts.length} clips)',
+                    label:     'Start Generation (${app.estimatedClipsForTarget} clips → ${app.targetDurationMinutes}min)',
                     icon:      Icons.play_arrow_rounded,
                     isLoading: app.isGenerating,
                     height:    60,
@@ -368,6 +376,117 @@ class _StatusBanner extends StatelessWidget {
         border: Border.all(color: AppColors.info.withOpacity(0.3)),
       ),
       child: Text(message, style: const TextStyle(color: AppColors.info, fontSize: 13)),
+    );
+  }
+}
+
+class _DurationSelector extends StatelessWidget {
+  final int selectedMinutes;
+  final int estimatedClips;
+  final ValueChanged<int> onChanged;
+
+  const _DurationSelector({
+    required this.selectedMinutes,
+    required this.estimatedClips,
+    required this.onChanged,
+  });
+
+  static const _options = [1, 2, 3, 4, 5, 6, 8];
+
+  @override
+  Widget build(BuildContext context) {
+    // Per-clip: ~4s video, ~60s generation + 5s cooldown = ~65s per clip
+    final totalGenSec = estimatedClips * 65;
+    final genMin      = totalGenSec ~/ 60;
+    final genSec      = totalGenSec % 60;
+    final genTimeStr  = genMin > 0 ? '~${genMin}m${genSec}s' : '~${genSec}s';
+
+    return GlassmorphicCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.av_timer_rounded, color: AppColors.cyan, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Target Video Duration',
+                style: GoogleFonts.plusJakartaSans(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.cyan.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.cyan.withOpacity(0.3)),
+                ),
+                child: Text(
+                  '$selectedMinutes min',
+                  style: const TextStyle(
+                    color: AppColors.cyan, fontWeight: FontWeight.w700, fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: _options.map((m) {
+              final sel = m == selectedMinutes;
+              return GestureDetector(
+                onTap: () => onChanged(m),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: sel ? AppColors.cyan.withOpacity(0.15) : AppColors.overlayLight,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: sel ? AppColors.cyan : AppColors.glassBorder,
+                      width: sel ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Text(
+                    '${m}min',
+                    style: TextStyle(
+                      color: sel ? AppColors.cyan : AppColors.textSecondary,
+                      fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 10),
+          if (estimatedClips > 0)
+            Row(
+              children: [
+                const Icon(Icons.info_outline_rounded, color: AppColors.textMuted, size: 13),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '$estimatedClips clips needed  •  Est. generation time: $genTimeStr  •  5s gap between calls',
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+                  ),
+                ),
+              ],
+            )
+          else
+            const Text(
+              'Add scenes to see clip estimate',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11.5),
+            ),
+        ],
+      ),
     );
   }
 }

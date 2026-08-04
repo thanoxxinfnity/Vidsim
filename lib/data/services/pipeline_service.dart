@@ -96,6 +96,11 @@ class PipelineService {
           prevLastFrameB64  = base64Encode(await lastFrame.readAsBytes());
           job.scenes[i] = job.scenes[i].copyWith(lastFramePath: lastFrame.path);
         }
+
+        // 5s cooldown between NIM API calls (keeps well within 40 RPM limit)
+        if (!_cancelled && i < job.scenes.length - 1) {
+          await Future.delayed(const Duration(seconds: 5));
+        }
       } else {
         _updateScene(job, i, SceneStatus.failed, error: 'Cancelled during retry');
       }

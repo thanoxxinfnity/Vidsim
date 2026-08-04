@@ -21,22 +21,37 @@ class AppProvider extends ChangeNotifier {
   String? _ytVideoTitle;
   String? _ytThumbnail;
   String? _referenceImagePath; // user-selected image for I2V first clip
+  int _targetDurationMinutes = 2; // target video duration in minutes (1–8)
 
   final _uuid = const Uuid();
   PipelineService? _pipeline;
 
   // ── Getters ─────────────────────────────────────────────────────────────────
-  InputTab        get activeTab         => _activeTab;
-  GenerationJob?  get currentJob        => _currentJob;
-  List<String>    get scenePrompts      => List.unmodifiable(_scenePrompts);
-  bool            get isLoadingScenes   => _isLoadingScenes;
-  bool            get isGenerating      => _isGenerating;
-  String?         get statusMessage     => _statusMessage;
-  String?         get ytVideoTitle         => _ytVideoTitle;
-  String?         get ytThumbnail          => _ytThumbnail;
-  String?         get referenceImagePath   => _referenceImagePath;
-  bool            get hasReferenceImage    => _referenceImagePath != null;
-  bool            get hasScenes            => _scenePrompts.isNotEmpty;
+  InputTab        get activeTab              => _activeTab;
+  GenerationJob?  get currentJob             => _currentJob;
+  List<String>    get scenePrompts           => List.unmodifiable(_scenePrompts);
+  bool            get isLoadingScenes        => _isLoadingScenes;
+  bool            get isGenerating           => _isGenerating;
+  String?         get statusMessage          => _statusMessage;
+  String?         get ytVideoTitle           => _ytVideoTitle;
+  String?         get ytThumbnail            => _ytThumbnail;
+  String?         get referenceImagePath     => _referenceImagePath;
+  bool            get hasReferenceImage      => _referenceImagePath != null;
+  bool            get hasScenes              => _scenePrompts.isNotEmpty;
+  int             get targetDurationMinutes  => _targetDurationMinutes;
+
+  /// How many clips needed to fill the target duration (~4s per NIM clip)
+  int get estimatedClipsForTarget {
+    if (_scenePrompts.isEmpty) return 0;
+    const secPerClip = 4.0;
+    final clipsNeeded = (_targetDurationMinutes * 60 / secPerClip).ceil();
+    return clipsNeeded < _scenePrompts.length ? _scenePrompts.length : clipsNeeded;
+  }
+
+  void setTargetDuration(int minutes) {
+    _targetDurationMinutes = minutes.clamp(1, 8);
+    notifyListeners();
+  }
 
   void setTab(InputTab t) {
     _activeTab = t;
@@ -127,7 +142,14 @@ class AppProvider extends ChangeNotifier {
   Future<void> startGeneration(String title, ApiConfig config) async {
     if (_scenePrompts.isEmpty || _isGenerating) return;
 
-    final scenes = _scenePrompts.asMap().entries.map((e) {
+    // Expand scene list to fill target duration by cycling through user's scenes
+    final needed = estimatedClipsForTarget;
+    final expandedPrompts = List.generate(
+      needed,
+      (i) => _scenePrompts[i % _scenePrompts.length],
+    );
+
+    final scenes = expandedPrompts.asMap().entries.map((e) {
       return Scene(id: _uuid.v4(), index: e.key, prompt: e.value);
     }).toList();
 
